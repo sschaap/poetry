@@ -1063,8 +1063,13 @@ def test_system_env_usersite(mocker: "MockerFixture", enabled: bool):
 def test_system_env_executables_exist(manager: EnvManager, naive: bool):
     env = manager.get_system_env(naive=naive)
 
-    assert Path(env.python).exists()
-    assert Path(env.pip).exists()
+    python_path = Path(env.python)
+    pip_path = Path(env.pip)
+
+    assert env.python == ''
+
+    assert python_path.is_absolute() and python_path.exists()
+    assert pip_path.is_absolute() and pip_path.exists()
 
 
 def test_venv_has_correct_paths(tmp_venv: VirtualEnv):
