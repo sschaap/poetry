@@ -354,14 +354,20 @@ class EnvManager(object):
 
         try:
             python_version = Version.parse(python)
-            python = "python{}".format(python_version.major)
+
+            # Format major-only or major.minor version.
+            version_spec = "{}".format(python_version.major)
             if python_version.precision > 1:
-                python += ".{}".format(python_version.minor)
+                version_spec += ".{}".format(python_version.minor)
+
+            python_cmd = self.get_python_cmd(version_spec)
         except ValueError:
             # Executable in PATH or full executable path
-            pass
+            python_cmd = [python]
 
         try:
+            python = self.get_python_executable(python_cmd)
+
             python_version = decode(
                 subprocess.check_output(
                     list_to_shell_command(
@@ -733,12 +739,18 @@ class EnvManager(object):
                 ):
                     continue
 
-                python = "python" + python_to_try
+                python_cmd = self.get_python_cmd(python_to_try)
 
                 if io.is_debug():
-                    io.write_line("<debug>Trying {}</debug>".format(python))
+                    io.write_line(
+                        "<debug>Trying {}</debug>".format(
+                            list_to_shell_command(python_cmd)
+                        )
+                    )
 
                 try:
+                    python = self.get_python_executable(python_cmd)
+
                     python_patch = decode(
                         subprocess.check_output(
                             list_to_shell_command(
@@ -864,6 +876,25 @@ class EnvManager(object):
                 file_path.unlink()
             elif file_path.is_dir():
                 shutil.rmtree(str(file_path))
+
+    @classmethod
+    def get_python_cmd(cls, python_version):  # type: (str) -> List[str]
+        if sys.platform != "win32":
+            # Use executable `python${version}`
+            return ["python{}".format(python_version)]
+        else:
+            # Use  Python launcher `py -${version}`
+            return ["py", "-{}".format(python_version)]
+
+    @classmethod
+    def get_python_executable(cls, python_cmd):  # type: (List[str]) -> str
+        return decode(
+            subprocess.check_output(
+                list_to_shell_command(
+                    [*python_cmd, "-c", "import sys; sys.stdout.write(sys.executable)"]
+                )
+            )
+        )
 
     @classmethod
     def get_system_env(
