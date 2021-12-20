@@ -1056,6 +1056,17 @@ def test_system_env_usersite(mocker: "MockerFixture", enabled: bool):
     )
 
 
+@pytest.mark.parametrize(
+    "naive",
+    [True, False],
+)
+def test_system_env_executables_exist(manager: EnvManager, naive: bool):
+    env = manager.get_system_env(naive=naive)
+
+    assert Path(env.python).exists()
+    assert Path(env.pip).exists()
+
+
 def test_venv_has_correct_paths(tmp_venv: VirtualEnv):
     paths = tmp_venv.paths
 
