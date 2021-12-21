@@ -1057,28 +1057,10 @@ def test_system_env_usersite(mocker: "MockerFixture", enabled: bool):
     )
 
 
-@unittest.skipUnless(sys.platform == "win32", "Windows-only")
-def test_system_env_executables_exist(tmp_dir: str, manager: EnvManager):
-    venv_path = Path(tmp_dir) / "Virtual Env"
-    manager.build_venv(str(venv_path), with_pip=True)
-
-    # Move the python executable(s) into the virtualenv prefix path.
-    # This is their default location in the system env on Windows
-    # when Python is installed using the executable installer.
-    while True:
-        venv = VirtualEnv(venv_path)
-        python_path = Path(venv.python)
-        expected_path = venv.path / python_path.name
-
-        # Keep moving executables until python is no longer found, or
-        # if found only in its expected place, the venv prefix path.
-        if python_path.exists() and python_path != expected_path:
-            python_path.replace(expected_path)
-            continue
-
-        break
-
-    assert python_path == expected_path
+def test_system_env_python_exists():
+    env = SystemEnv(Path(sys.base_prefix))
+    python_path = Path(env.python)
+    assert python_path.exists()
 
 
 def test_venv_has_correct_paths(tmp_venv: VirtualEnv):
